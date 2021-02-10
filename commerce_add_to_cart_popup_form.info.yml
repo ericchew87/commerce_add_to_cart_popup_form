@@ -1,0 +1,7 @@
+name: 'Add To Cart Pop-Up Form'
+type: module
+description: 'Show the add to cart form in a modal window.'
+core: 8.x
+package: 'Commerce (contrib)'
+dependencies:
+  - commerce:commerce_cart

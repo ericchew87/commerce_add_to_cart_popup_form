@@ -1,0 +1,20 @@
+{#
+/**
+ * @file
+ * Default theme implementation to display the commerce_add_to_cart_popup_form.
+ *
+ * Available variables:
+ * - form: The form itself.
+ * - product: The parent product entity. This is the fully loaded instance.
+ * - view_mode: Single string that tell us which view mode is being used.
+ *
+ * @ingroup themeable
+ */
+#}
+{%
+  set classes = [
+  'commerce-add-to-cart-popup-form',
+  view_mode ? view_mode|clean_class
+]
+%}
+{{ form }}

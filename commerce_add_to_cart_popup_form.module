@@ -1,0 +1,105 @@
+<?php
+
+/**
+ * @file
+ * Contains commerce_add_to_cart_popup_form.module.
+ */
+
+use Drupal\commerce_add_to_cart_popup_form\Form\AddToCartPopUpForm;
+use Drupal\Component\Serialization\Json;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormState;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_help().
+ */
+function commerce_add_to_cart_popup_form_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the commerce_add_to_cart_popup_form module.
+    case 'help.page.commerce_add_to_cart_popup_form':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Show the add to cart form in a modal window.') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+//function commerce_add_to_cart_popup_form_theme() {
+//  return [
+//    'commerce_add_to_cart_popup_form' => [
+//      'variables' => [
+//        'form' => [],
+//        'product' => NULL,
+//        'view_mode' => NULL,
+//      ],
+//    ],
+//  ];
+//}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_add_to_cart_popup_form_form_commerce_order_item_add_to_cart_form_alter(array &$form, FormStateInterface $form_state) {
+  $view_mode = $form_state->get('view_mode');
+  if ($view_mode === 'commerce_add_to_cart_popup_form') {
+    $form['actions']['submit']['#attributes']['class'][] = 'use-ajax';
+    $form['actions']['submit']['#ajax'] = [
+      'callback' => [AddToCartPopUpForm::class, 'submitModalFormAjax'],
+      'event' => 'click',
+    ];
+  }
+}
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function commerce_add_to_cart_popup_form_entity_extra_field_info() {
+  $extra = array();
+  // Add a cart form pseudo-field for each product variation type.
+  $bundles = \Drupal::service('entity_type.bundle.info')->getBundleInfo('commerce_product');
+  foreach ($bundles as $id => $bundle) {
+    $extra['commerce_product'][$id]['display']['commerce_add_to_cart_popup_form'] = array(
+      'label' => t('Add to cart pop-up form'),
+      'description' => t('Add to cart button that triggers pop-up cart form.'),
+      'weight' => 10,
+      'visible' => FALSE,
+    );
+  }
+  return $extra;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function commerce_add_to_cart_popup_form_commerce_product_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  // Check if the extra field should be displayed.
+  if ($display->getComponent('commerce_add_to_cart_popup_form')) {
+    $build['commerce_add_to_cart_popup_form'] = [
+      '#type' => 'link',
+      '#title' => t('Add to cart'),
+      '#url' => Url::fromRoute('commerce_add_to_cart_popup_form.add_to_cart_modal_form', [
+        'commerce_product' => $entity->id(),
+      ]),
+      '#attributes' => [
+        'class' => [
+          'use-ajax',
+          'button',
+        ],
+        'data-dialog-type' => 'modal',
+        'data-dialog-options' => Json::encode([
+          'width' => 700
+        ]),
+      ],
+    ];
+    $build['#attached']['library'][] = 'core/drupal.dialog.ajax';
+  }
+}

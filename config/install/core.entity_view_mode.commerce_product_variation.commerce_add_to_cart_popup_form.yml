@@ -1,0 +1,12 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_product
+  enforced:
+    module:
+      - commerce_add_to_cart_popup_form
+id: commerce_product_variation.commerce_add_to_cart_popup_form
+label: 'Commerce Add To Cart Pop-Up Form'
+targetEntityType: commerce_product_variation
+cache: true

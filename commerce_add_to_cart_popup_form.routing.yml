@@ -1,0 +1,11 @@
+commerce_add_to_cart_popup_form.add_to_cart_modal_form:
+  path: '/commerce-add-to-cart-popup-form/product/{commerce_product}'
+  defaults:
+    _form: '\Drupal\commerce_add_to_cart_popup_form\Form\AddToCartPopUpForm'
+    _title: 'Add to cart'
+  options:
+    parameters:
+      commerce_product:
+        type: 'entity:commerce_product'
+  requirements:
+    _permission: 'view commerce_product'
