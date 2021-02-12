@@ -5,8 +5,9 @@
  *
  * Available variables:
  * - form: The form itself.
- * - product: The parent product entity. This is the fully loaded instance.
- * - view_mode: Single string that tell us which view mode is being used.
+ * - product: The rendered product
+ * - product_entity: The product entity.
+ * - order_item: The order item entity.
  *
  * @ingroup themeable
  */
@@ -17,4 +18,5 @@
   view_mode ? view_mode|clean_class
 ]
 %}
+{{ product }}
 {{ form }}

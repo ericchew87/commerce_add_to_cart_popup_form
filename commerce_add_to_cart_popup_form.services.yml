@@ -1,0 +1,4 @@
+services:
+  commerce_add_to_cart_popup_form.add_to_cart_popup_manager:
+    class: Drupal\commerce_add_to_cart_popup_form\AddToCartPopUpManager
+    arguments: ['@entity_type.manager', '@form_builder']

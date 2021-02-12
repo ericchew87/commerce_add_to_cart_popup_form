@@ -1,8 +1,8 @@
 commerce_add_to_cart_popup_form.add_to_cart_modal_form:
   path: '/commerce-add-to-cart-popup-form/product/{commerce_product}'
   defaults:
-    _form: '\Drupal\commerce_add_to_cart_popup_form\Form\AddToCartPopUpForm'
-    _title: 'Add to cart'
+    _controller: '\Drupal\commerce_add_to_cart_popup_form\Controller\AddToCartPopUpController::showAddToCartPopUp'
+    _title_callback: '\Drupal\commerce_add_to_cart_popup_form\Controller\AddToCartPopUpController::getTitle'
   options:
     parameters:
       commerce_product:
