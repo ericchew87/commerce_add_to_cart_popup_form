@@ -57,9 +57,6 @@ class AddToCartPopUpManager implements AddToCartPopUpManagerInterface {
       '#theme' => 'commerce_add_to_cart_popup_form',
       '#product' => $product_popup_view_builder->view($product, 'commerce_add_to_cart_popup_form'),
       '#product_entity' => $product,
-      '#attributes' => [
-        'id' => 'commerce-add-to-cart-popup-form-modal-wrapper',
-      ],
     ];
   }
 

@@ -30,7 +30,7 @@ function commerce_add_to_cart_popup_form_help($route_name, RouteMatchInterface $
 /**
  * Implements hook_theme().
  */
-function commerce_add_to_cart_popup_form_theme() {
+function commerce_add_to_cart_popup_form_theme($existing, $type, $theme, $path) {
   return [
     'commerce_add_to_cart_popup_link' => [
       'variables' => [
@@ -44,7 +44,6 @@ function commerce_add_to_cart_popup_form_theme() {
       'variables' => [
         'product' => NULL,
         'product_entity' => NULL,
-        'attributes' => new \Drupal\Core\Template\Attribute(),
       ],
     ],
     'commerce_add_to_cart_popup_success' => [
@@ -52,10 +51,16 @@ function commerce_add_to_cart_popup_form_theme() {
         'content' => [],
         'product_entity' => NULL,
         'selected_variation' => NULL,
-        'attributes' => new \Drupal\Core\Template\Attribute(),
       ],
     ],
   ];
+}
+
+/**
+ * Prepares variables for the commerce add to cart pop-up form template.
+ */
+function template_preprocess_commerce_add_to_cart_popup_form(&$variables) {
+  $variables['attributes']['id'] = 'commerce-add-to-cart-popup-form-modal-wrapper';
 }
 
 /**
