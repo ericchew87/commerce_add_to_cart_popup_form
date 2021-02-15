@@ -30,18 +30,20 @@ interface AddToCartPopUpManagerInterface {
   public function buildAddToCartPopUpForm(ProductInterface $product);
 
   /**
+   * Builds the add to cart link element.
+   *
    * @param array $build
+   *   The build array.
    * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The product entity.
    * @param \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display
+   *   The entity view display
    * @param $view_mode
+   *   The view mode.
+   *
+   * @return array
+   *   The add to cart link render element.
    */
   public function buildAddToCartLink(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode);
 
-  /**
-   * @param array $build
-   * @param \Drupal\Core\Entity\EntityInterface $entity
-   * @param \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display
-   * @param $view_mode
-   */
-  public function alterBuild(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode);
 }

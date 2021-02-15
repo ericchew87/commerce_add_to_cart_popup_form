@@ -5,10 +5,10 @@ namespace Drupal\commerce_add_to_cart_popup_form;
 use Drupal\commerce_product\Entity\ProductInterface;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\Entity\EntityViewDisplay;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBuilderInterface;
-use Drupal\Core\Form\FormState;
 use Drupal\Core\Url;
 
 class AddToCartPopUpManager implements AddToCartPopUpManagerInterface {
@@ -51,39 +51,15 @@ class AddToCartPopUpManager implements AddToCartPopUpManagerInterface {
    * {@inheritDoc}
    */
   public function buildAddToCartPopUpForm(ProductInterface $product) {
-    $default_variation = $product->getDefaultVariation();
-
-    $order_item_storage = $this->entityTypeManager->getStorage('commerce_order_item');
-    $order_item = $order_item_storage->createFromPurchasableEntity($default_variation);
-    /** @var \Drupal\commerce_cart\Form\AddToCartFormInterface $form_object */
-    $form_object = $this->entityTypeManager->getFormObject('commerce_order_item', 'commerce_add_to_cart_popup_form');
-    $form_object->setEntity($order_item);
-    // The default form ID is based on the variation ID, but in this case the
-    // product ID is more reliable (the default variation might change between
-    // requests due to an availability change, for example).
-    $form_object->setFormId($form_object->getBaseFormId() . '_commerce_product_' . $product->id());
-
-    $modal_wrapper_id = 'commerce-add-to-cart-popup-form-modal-wrapper';
-
-    $form_state = (new FormState())->setFormState([
-      'product' => $product,
-      'view_mode' => 'commerce_add_to_cart_popup_form',
-      'settings' => [
-        'combine' => FALSE,
-      ],
-      'modal_wrapper_id' => $modal_wrapper_id,
-    ]);
-    /** @var \Drupal\commerce_product\ProductViewBuilder $product_view_builder */
-    $product_view_builder = $this->entityTypeManager->getViewBuilder('commerce_product');
-
+    /** @var \Drupal\commerce_add_to_cart_popup_form\ProductPopUpViewBuilder $product_popup_view_builder */
+    $product_popup_view_builder = $this->entityTypeManager->getHandler('commerce_product', 'popup_view_builder');
     return [
       '#theme' => 'commerce_add_to_cart_popup_form',
-      '#form' => $this->formBuilder->buildForm($form_object, $form_state),
-      '#product' => $product_view_builder->view($product, 'commerce_add_to_cart_popup_form'),
+      '#product' => $product_popup_view_builder->view($product, 'commerce_add_to_cart_popup_form'),
       '#product_entity' => $product,
-      '#order_item' => $order_item,
-      '#prefix' => '<div id="' . $modal_wrapper_id . '">',
-      '#suffix' => '</div>',
+      '#attributes' => [
+        'id' => 'commerce-add-to-cart-popup-form-modal-wrapper',
+      ],
     ];
   }
 
@@ -92,53 +68,79 @@ class AddToCartPopUpManager implements AddToCartPopUpManagerInterface {
    */
   public function buildAddToCartLink(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
     assert($entity instanceof ProductInterface);
-    if ($this->applies($build, $entity, $display, $view_mode)) {
+    if ($this->shouldRender($build, $entity, $display, $view_mode)) {
 
-      $settings = $display->getThirdPartySetting('commerce_add_to_cart_popup_form', 'settings');
+      $settings = $display->getThirdPartySetting('commerce_add_to_cart_popup_form', 'field_settings');
       if (empty($settings['display'])) {
         $settings['display'] = [
           'width' => 800,
         ];
       }
+      $build['#attached']['library'][] = 'core/drupal.dialog.ajax';
 
-      $build['commerce_add_to_cart_popup_form'] = [
+      $link = [
         '#type' => 'link',
         '#title' => t('Add to cart'),
         '#url' => Url::fromRoute('commerce_add_to_cart_popup_form.add_to_cart_modal_form', [
           'commerce_product' => $entity->id(),
         ]),
         '#attributes' => [
+          'rel' => 'nofollow',
           'class' => [
             'use-ajax',
-            'button',
           ],
           'data-dialog-type' => 'modal',
           'data-dialog-options' => Json::encode(array_filter($settings['display'])),
         ],
       ];
-      $build['#attached']['library'][] = 'core/drupal.dialog.ajax';
+
+      $build['commerce_add_to_cart_popup_form'] = [
+        '#theme' => 'commerce_add_to_cart_popup_link',
+        '#link' => $link,
+        '#product_entity' => $entity,
+        '#view_mode' => $view_mode,
+        '#display' => $display,
+      ];
     }
   }
 
   /**
-   * {@inheritDoc}
-   */
-  public function alterBuild(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
-    if ($view_mode == 'commerce_add_to_cart_popup_form' && isset($build['variations'])) {
-      unset($build['variations']);
-    }
-  }
-
-  /**
+   * Gets whether the pop-up link should render.
+   *
    * @param array $build
+   *   The build.
    * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The product entity.
    * @param \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display
+   *   The entity view display.
    * @param $view_mode
+   *   The view mode.
    *
    * @return bool
+   *   TRUE if the pop-up link should render, FALSE otherwise.
    */
-  protected function applies(array $build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
-    return (bool) $display->getComponent('commerce_add_to_cart_popup_form');
+  protected function shouldRender(array $build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+    // The add to cart popup form field must be present in the display.
+    if (!$display->getComponent('commerce_add_to_cart_popup_form')) {
+      return FALSE;
+    }
+
+    // The display ID for the pop-up display mode.
+    $popup_display_id = $entity->getEntityTypeId() . '.' . $entity->bundle() . '.commerce_add_to_cart_popup_form';
+    /** @var \Drupal\Core\Entity\Display\EntityViewDisplayInterface $add_to_cart_popup_form_view_display */
+    $add_to_cart_popup_form_view_display = EntityViewDisplay::load($popup_display_id);
+    // The display mode for the pop-up must be present.
+    if (!$add_to_cart_popup_form_view_display) {
+      return FALSE;
+    }
+
+    // The add to cart form must be present in the pop-up display.
+    $variation_component = $add_to_cart_popup_form_view_display->getComponent('variations');
+    if (!$variation_component || $variation_component['type'] !== 'commerce_add_to_cart') {
+      return FALSE;
+    }
+
+    return TRUE;
   }
 
 }

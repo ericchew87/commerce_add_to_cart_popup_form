@@ -1,0 +1,22 @@
+core.entity_view_display.commerce_product.*.*.third_party.commerce_add_to_cart_popup_form:
+  type: mapping
+  label: 'Commerce add to cart pop-up field settings'
+  mapping:
+    field_settings:
+      type: mapping
+      label: 'Shipment type'
+      mapping:
+        combine:
+          type: boolean
+          label: 'Whether to attempt to combine order items containing the same product variation'
+        display:
+          type: mapping
+          label: 'Display settings for the modal'
+          mapping:
+            width:
+              type: string
+              label: 'The width of the modal'
+            height:
+              type: string
+              label: 'The height of the modal'
+

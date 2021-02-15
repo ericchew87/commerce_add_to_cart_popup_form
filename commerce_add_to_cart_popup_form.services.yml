@@ -2,3 +2,17 @@ services:
   commerce_add_to_cart_popup_form.add_to_cart_popup_manager:
     class: Drupal\commerce_add_to_cart_popup_form\AddToCartPopUpManager
     arguments: ['@entity_type.manager', '@form_builder']
+
+  commerce_add_to_cart_popup_form.variation_popup_field_renderer:
+    class: Drupal\commerce_add_to_cart_popup_form\VariationPopUpFieldRenderer
+    arguments: [ '@entity_type.manager']
+
+  commerce_add_to_cart_popup_form.product_variation_ajax_subscriber:
+    class: Drupal\commerce_add_to_cart_popup_form\EventSubscriber\ProductVariationAjaxSubscriber
+    arguments: ['@commerce_add_to_cart_popup_form.variation_popup_field_renderer']
+    tags:
+      - { name: event_subscriber }
+
+  commerce_add_to_cart_popup_form.lazy_builders:
+    class: Drupal\commerce_add_to_cart_popup_form\ProductPopUpLazyBuilders
+    arguments: [ '@entity_type.manager', '@form_builder', '@entity.repository' ]

@@ -4,19 +4,17 @@
  * Default theme implementation to display the commerce_add_to_cart_popup_form.
  *
  * Available variables:
- * - form: The form itself.
  * - product: The rendered product
  * - product_entity: The product entity.
- * - order_item: The order item entity.
  *
  * @ingroup themeable
  */
 #}
 {%
   set classes = [
-  'commerce-add-to-cart-popup-form',
   view_mode ? view_mode|clean_class
 ]
 %}
-{{ product }}
-{{ form }}
+<div {{ attributes.addClass(classes) }}>
+  {{ product }}
+</div>

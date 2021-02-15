@@ -32,12 +32,27 @@ function commerce_add_to_cart_popup_form_help($route_name, RouteMatchInterface $
  */
 function commerce_add_to_cart_popup_form_theme() {
   return [
+    'commerce_add_to_cart_popup_link' => [
+      'variables' => [
+        'link' => [],
+        'product_entity' => NULL,
+        'view_mode' => NULL,
+        'display' => NULL,
+      ],
+    ],
     'commerce_add_to_cart_popup_form' => [
       'variables' => [
-        'form' => [],
         'product' => NULL,
         'product_entity' => NULL,
-        'order_item',
+        'attributes' => new \Drupal\Core\Template\Attribute(),
+      ],
+    ],
+    'commerce_add_to_cart_popup_success' => [
+      'variables' => [
+        'content' => [],
+        'product_entity' => NULL,
+        'selected_variation' => NULL,
+        'attributes' => new \Drupal\Core\Template\Attribute(),
       ],
     ],
   ];
@@ -47,23 +62,26 @@ function commerce_add_to_cart_popup_form_theme() {
  * Implements hook_entity_type_build().
  */
 function commerce_add_to_cart_popup_form_entity_type_build(array &$entity_types) {
+  // Register the custom add to cart form for pop-ups.
   $entity_types['commerce_order_item']->setFormClass('commerce_add_to_cart_popup_form', 'Drupal\commerce_add_to_cart_popup_form\Form\AddToCartPopUpForm');
+  // Register the custom product view builder for pop-ups.
+  $entity_types['commerce_product']->setHandlerClass('popup_view_builder', 'Drupal\commerce_add_to_cart_popup_form\ProductPopUpViewBuilder');
 }
 
 /**
  * Implements hook_entity_extra_field_info().
  */
 function commerce_add_to_cart_popup_form_entity_extra_field_info() {
-  $extra = array();
-  // Add a cart form pseudo-field for each product variation type.
+  $extra = [];
+  // Add a cart pop-up form pseudo-field for each product type.
   $bundles = \Drupal::service('entity_type.bundle.info')->getBundleInfo('commerce_product');
   foreach ($bundles as $id => $bundle) {
-    $extra['commerce_product'][$id]['display']['commerce_add_to_cart_popup_form'] = array(
+    $extra['commerce_product'][$id]['display']['commerce_add_to_cart_popup_form'] = [
       'label' => t('Add to cart pop-up form'),
       'description' => t('Add to cart button that triggers pop-up cart form.'),
       'weight' => 10,
       'visible' => FALSE,
-    );
+    ];
   }
   return $extra;
 }
@@ -85,7 +103,7 @@ function commerce_add_to_cart_popup_form_form_entity_view_display_edit_form_alte
 
   // Provide settings as a summary if the component is present.
   if ($display->getComponent('commerce_add_to_cart_popup_form')) {
-    $settings = $display->getThirdPartySetting('commerce_add_to_cart_popup_form', 'settings');
+    $settings = $display->getThirdPartySetting('commerce_add_to_cart_popup_form', 'field_settings');
     $form['fields']['commerce_add_to_cart_popup_form']['settings_summary'] = [
       'combine' => [
         '#type' => 'checkbox',
@@ -93,9 +111,10 @@ function commerce_add_to_cart_popup_form_form_entity_view_display_edit_form_alte
         '#default_value' => $settings['combine'] ?? NULL,
       ],
       'display' => [
-        '#type' => 'container',
+        '#type' => 'fieldset',
+        '#title' => t('Modal settings'),
         '#attributes' => [
-          'class' => ['container-inline'],
+          'class' => ['form--inline'],
         ],
         'width' => [
           '#type' => 'textfield',
@@ -110,7 +129,6 @@ function commerce_add_to_cart_popup_form_form_entity_view_display_edit_form_alte
           '#size' => 5,
         ],
       ],
-
     ];
   }
 
@@ -119,15 +137,17 @@ function commerce_add_to_cart_popup_form_form_entity_view_display_edit_form_alte
 }
 
 /**
- * Entity builder for the Product Variation entity "manage display" form.
+ * Entity builder for the Product entity "manage display" form.
  */
 function commerce_add_to_cart_popup_form_form_entity_view_display_edit_form_builder($entity_type, EntityViewDisplay $display, &$form, FormStateInterface $form_state) {
   $values = $form_state->getValues();
   if (isset($values['fields']['commerce_add_to_cart_popup_form']['settings_summary'])) {
     // Save the setting as stored configuration on the EntityViewDisplay entity.
     $settings = $values['fields']['commerce_add_to_cart_popup_form']['settings_summary'];
-    $display->setThirdPartySetting('commerce_add_to_cart_popup_form', 'settings', $settings);
+    $display->setThirdPartySetting('commerce_add_to_cart_popup_form', 'field_settings', $settings);
+    return;
   }
+  $display->unsetThirdPartySetting('commerce_add_to_cart_popup_form', 'field_settings');
 }
 
 
@@ -138,5 +158,4 @@ function commerce_add_to_cart_popup_form_commerce_product_view(array &$build, En
   /** @var \Drupal\commerce_add_to_cart_popup_form\AddToCartPopUpManagerInterface $add_to_cart_popup_manager */
   $add_to_cart_popup_manager = \Drupal::service('commerce_add_to_cart_popup_form.add_to_cart_popup_manager');
   $add_to_cart_popup_manager->buildAddToCartLink($build, $entity, $display, $view_mode);
-  $add_to_cart_popup_manager->alterBuild($build, $entity, $display, $view_mode);
 }
